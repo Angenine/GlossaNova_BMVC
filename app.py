@@ -1,6 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import json
 import random
+import os  # <- NOVO: Importe o módulo OS
+
+# --- Define o caminho absoluto para o projeto ---
+basedir = os.path.abspath(os.path.dirname(__file__)) # <- NOVO
 
 class Flashcard:
     def __init__(self, frente: str, verso: str, idioma: str = 'Inglês'):
@@ -18,11 +22,11 @@ class Flashcard:
     def __str__(self):
         """Representação legível do objeto."""
         return f"Flashcard ({self.idioma}): {self.frente} -> {self.verso}"
-## Arquivo: app.py 
+
 class Baralho:
     
-    # Nome do arquivo de armazenamento
-    ARQUIVO_DADOS = 'flashcards.json' 
+    # <- NOVO: Usa o caminho absoluto para encontrar o JSON
+    ARQUIVO_DADOS = os.path.join(basedir, 'flashcards.json') 
     
     def __init__(self):
         self.cartoes = []
@@ -34,15 +38,15 @@ class Baralho:
 
     def _carregar_dados(self):
         try:
+            # Agora ele vai abrir o arquivo pelo caminho completo
             with open(self.ARQUIVO_DADOS, 'r', encoding='utf-8') as f:
                 dados = json.load(f)
-                # Recria os objetos Flashcard a partir dos dados do JSON
                 self.cartoes = [Flashcard(**dado) for dado in dados]
         except FileNotFoundError:
-            # Cria um arquivo JSON vazio se não existir
+            print(f"AVISO: Arquivo não encontrado em {self.ARQUIVO_DADOS}")
             self.cartoes = []
         except json.JSONDecodeError:
-            # Caso o arquivo esteja corrompido ou vazio
+            print(f"AVISO: Erro ao decodificar o JSON em {self.ARQUIVO_DADOS}")
             self.cartoes = [] 
 
     def _salvar_dados(self):
@@ -60,43 +64,48 @@ class Baralho:
         if 0 <= indice < len(self.cartoes):
             return self.cartoes[indice]
         return None
+
 # --- Código Flask ---
 app = Flask(__name__)
-baralho_principal = Baralho() # Instancia o Baralho (Objeto POO)
+baralho_principal = Baralho() 
 
-@app.route('/', methods=['GET', 'POST'])
+# --- ROTA ATUALIZADA ---
+@app.route('/')
 def home():
-    """Rota principal: Cria novos flashcards e exibe a lista."""
+    """Rota principal: Agora exibe o painel (dashboard)."""
+    return render_template('index.html')
+
+
+# --- NOVA ROTA ---
+@app.route('/flashcards', methods=['GET', 'POST'])
+def pagina_flashcards():
+    """Rota para a página de flashcards (adicionar e listar)."""
     
     if request.method == 'POST':
-        # 1. Criação de Novo Flashcard (Lógica POO)
+        # Lógica de criação de card que estava em home()
         frente = request.form.get('frente')
         verso = request.form.get('verso')
         idioma = request.form.get('idioma', 'Desconhecido')
         
         if frente and verso:
-            novo_cartao = Flashcard(frente, verso, idioma) # Cria o Objeto
-            baralho_principal.adicionar_cartao(novo_cartao) # Usa o método POO
-            return redirect(url_for('home')) # Redireciona para evitar reenvio de formulário
+            novo_cartao = Flashcard(frente, verso, idioma) 
+            baralho_principal.adicionar_cartao(novo_cartao) 
+            return redirect(url_for('pagina_flashcards')) 
 
-    # 2. Exibição
-    # A página index.html será renderizada (ver próxima seção)
-    return render_template('index.html', cartoes=baralho_principal.buscar_todos())
+    # Exibição (GET)
+    return render_template('flashcards.html', cartoes=baralho_principal.buscar_todos())
 
 
+# --- ROTA DE API (Sem alteração) ---
 @app.route('/revisar')
 def revisar():
-    """Rota para revisão, retorna um flashcard aleatório em formato JSON."""
+    """Rota para revisão (API), retorna um flashcard aleatório em JSON."""
     cartoes = baralho_principal.buscar_todos()
     if not cartoes:
         return jsonify({'erro': 'Nenhum flashcard cadastrado.'}), 404
     
-    # Seleciona um cartão aleatório
     cartao = random.choice(cartoes)
-    
-    # Retorna o cartão em formato JSON para o JavaScript lidar com a exibição
     return jsonify(cartao.to_dict())
 
 if __name__ == '__main__':
-    # Para rodar, digite 'python app.py' no terminal
     app.run(host='0.0.0.0', port=8000, debug=True)

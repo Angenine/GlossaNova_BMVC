@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Flashcards - GlossaNova</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <header class="bg-white shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+            <a href="{{ url_for('home') }}" class="flex-shrink-0 flex items-center">
+                <img class="h-8 w-auto" src="{{ url_for('static', filename='img/Logo.png') }}" alt="GlossaNova Logo">
+                <span class="text-2xl font-bold text-gray-800 ml-2">GlossaNova</span>
+            </a>
+                <!-- <div class="flex items-center">
+                    <a href="#" class="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                    <a href="#" class="ml-2 bg-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-primary-dark">Cadastrar</a>
+                </div> -->
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+        
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900">Flashcards</h1>
+            <p class="text-lg text-gray-600 mt-1">Adicione, revise e gerencie seu vocabulário.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            
+            <section class="bg-white rounded-lg shadow-lg p-6 lg:p-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-5">Adicionar Nova Palavra</h2>
+                <form method="POST" class="space-y-4">
+                    <div>
+                        <label for="frente" class="block text-sm font-medium text-gray-700">Frente</label>
+                        <input type="text" id="frente" name="frente" placeholder="Palavra/Frase (Ex: Hello)" required
+                               class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                    </div>
+                    <div>
+                        <label for="verso" class="block text-sm font-medium text-gray-700">Verso</label>
+                        <input type="text" id="verso" name="verso" placeholder="Tradução/Definição (Ex: Olá)" required
+                               class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                    </div>
+                    <div>
+                        <label for="idioma" class="block text-sm font-medium text-gray-700">Idioma</label>
+                        <input type="text" id="idioma" name="idioma" value="Inglês" 
+                               class="mt-1 block w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                    </div>
+                    <button type="submit" 
+                            class="w-full bg-primary text-white px-4 py-3 rounded-md text-base font-medium hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+                        Salvar Cartão
+                    </button>
+                </form>
+            </section>
+
+            <section class="bg-white rounded-lg shadow-lg p-6 lg:p-8">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-5">Revisar Cartões</h2>
+                
+                <div class="[perspective:1000px] min-h-[240px]">
+                    
+                    <div id="flashcard-box" onclick="virarCartao()" 
+                         class="relative w-full h-full min-h-[240px] [transform-style:preserve-3d] transition-transform duration-700 ease-in-out cursor-pointer">
+                        
+                        <div class="absolute w-full h-full [backface-visibility:hidden] rounded-lg border-2 border-primary bg-purple-50 flex items-center justify-center p-6">
+                            <span id="card-frente" class="text-2xl font-medium text-gray-800 text-center">
+                                Clique em "Revisar Próxima Palavra"!
+                            </span>
+                        </div>
+
+                        <div class="absolute w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-lg border-2 border-green-600 bg-green-50 flex items-center justify-center p-6">
+                            <span id="card-verso" class="text-2xl font-medium text-green-700 text-center">
+                                </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <button onclick="carregarNovoCartao()"
+                            class="w-full bg-gray-400 text-white px-4 py-3 rounded-md text-base font-medium hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        Revisar Próxima Palavra
+                    </button>
+                </div>
+                
+                <p class="idioma-info text-center mt-3 text-gray-500" id="idioma-display"></p>
+            </section>
+
+        </div> 
+        
+        <section class="bg-white rounded-lg shadow-lg p-6 lg:p-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-5">Cartões Cadastrados ({{ cartoes|length }})</h2>
+            {% if cartoes %}
+                <div class="overflow-x-auto border border-gray-200 rounded-md">
+                    <table class="w-full min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Frente</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verso</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Idioma</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for cartao in cartoes %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{{ cartao.frente }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ cartao.verso }}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ cartao.idioma }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="text-gray-500 italic">Nenhum cartão cadastrado ainda. Use o formulário acima para começar!</p>
+            {% endif %}
+        </section>
+    </main>
+
+    <footer class="text-center py-6 mt-12 bg-gray-200">
+        <p class="text-gray-600">&copy; 2025 GlossaNova.</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
