@@ -1,0 +1,345 @@
+/* Arquivo: static/style.css */
+
+/* Variáveis CSS para fácil customização */
+:root {
+    --primary-color: #2196F3; /* Azul vibrante */
+    --secondary-color: #4CAF50; /* Verde para destaque */
+    --background-color: #f5f5f5; /* Fundo mais claro */
+    --text-color: #1a1a1a;
+    --light-text-color: #555;
+    --card-bg: #ffffff;
+    --border-color: #ddd;
+    --shadow-light: rgba(0, 0, 0, 0.05);
+    --shadow-medium: rgba(0, 0, 0, 0.1);
+}
+
+/* Base */
+body {
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header */
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 30px 0;
+    box-shadow: 0 2px 4px var(--shadow-medium);
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.8em;
+    font-weight: 700;
+}
+
+header h1 i {
+    margin-right: 15px;
+}
+
+header p {
+    font-size: 1.2em;
+    margin-top: 10px;
+    opacity: 0.9;
+}
+
+/* Main Content */
+main {
+    padding-bottom: 50px;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: 10px;
+    box-shadow: 0 4px 15px var(--shadow-light);
+    padding: 30px;
+    margin-bottom: 30px;
+    text-align: center;
+    transition: transform 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card h2 {
+    color: var(--primary-color);
+    font-size: 2em;
+    margin-top: 0;
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.card h2 i {
+    color: var(--secondary-color);
+}
+
+/* Forms and Inputs */
+form {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+input[type="text"] {
+    flex: 1;
+    min-width: 200px; /* Garante que não fiquem muito pequenos */
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1em;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+input[type="text"]:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+    outline: none;
+}
+
+button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    background-color: var(--primary-color);
+    color: white;
+    transition: background-color 0.3s, transform 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+button:hover {
+    background-color: #43a047; /* Tom um pouco mais escuro */
+    transform: translateY(-2px);
+}
+
+button i {
+    font-size: 1.1em;
+}
+
+/* Review Area - Flashcard */
+.flashcard-container {
+    perspective: 1000px; /* Para a animação 3D de virar */
+    margin: 30px auto;
+    width: 320px;
+    height: 180px;
+    position: relative;
+}
+
+.flashcard-box {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Animação mais suave */
+    border-radius: 10px;
+    box-shadow: 0 6px 20px var(--shadow-medium);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #FFFDE7; /* Amarelo claro suave */
+    color: #424242;
+    font-size: 1.8em;
+    font-weight: 600;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.flashcard-box.flipped {
+    transform: rotateY(180deg);
+}
+
+.card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden; /* Oculta a face traseira quando não está virada */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.card-face.front {
+    background-color: #FFFDE7; /* Frente */
+    color: #424242;
+}
+
+.card-face.back {
+    background-color: #E8F5E9; /* Verso (verde claro) */
+    color: #388E3C; /* Texto verde escuro */
+    transform: rotateY(180deg); /* Vira o verso para estar na posição correta */
+}
+
+
+.btn-review {
+    background-color: var(--secondary-color);
+    margin-top: 20px;
+}
+
+.btn-review:hover {
+    background-color: #1976D2;
+}
+
+.idioma-info {
+    font-size: 1em;
+    color: var(--light-text-color);
+    margin-top: 15px;
+    font-style: italic;
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+    text-align: left;
+}
+
+th, td {
+    padding: 12px 15px;
+    border: 1px solid var(--border-color);
+    font-size: 0.95em;
+}
+
+th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+tbody tr:nth-child(even) {
+    background-color: #fcfcfc;
+}
+
+tbody tr:hover {
+    background-color: #f0f0f0;
+}
+
+.no-cards-message {
+    color: var(--light-text-color);
+    font-style: italic;
+    margin-top: 20px;
+}
+
+/* Footer */
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+    margin-top: 40px;
+    font-size: 0.9em;
+}
+
+footer i {
+    color: #e74c3c; /* Coração vermelho */
+    margin: 0 5px;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2.2em;
+    }
+    header p {
+        font-size: 1em;
+    }
+    .card {
+        padding: 20px;
+    }
+    .card h2 {
+        font-size: 1.8em;
+    }
+    input[type="text"] {
+        flex-basis: 100%; /* Inputs ocupam a largura total em telas menores */
+    }
+    .flashcard-container {
+        width: 90%; /* Ajusta a largura do flashcard */
+        height: 160px;
+    }
+    .flashcard-box {
+        font-size: 1.5em;
+    }
+    table, thead, tbody, th, td, tr {
+        display: block;
+    }
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+    tr {
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 5px var(--shadow-light);
+    }
+    td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+        text-align: right;
+    }
+    td:last-child {
+        border-bottom: none;
+    }
+    td:before {
+        position: absolute;
+        top: 0;
+        left: 6px;
+        width: 45%;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left;
+        font-weight: bold;
+        color: var(--primary-color);
+    }
+    td:nth-of-type(1):before { content: "Frente"; }
+    td:nth-of-type(2):before { content: "Verso"; }
+    td:nth-of-type(3):before { content: "Idioma"; }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.8em;
+    }
+    .flashcard-container {
+        height: 140px;
+    }
+    .flashcard-box {
+        font-size: 1.2em;
+    }
+    button {
+        width: 100%;
+    }
+}
