@@ -8,18 +8,15 @@ const idiomaDisplay = document.getElementById('idioma-display');
 
 
 function carregarNovoCartao() {
-    // 1. Reseta o estado visual do cartão (volta para a frente)
     if (isFlipped) {
         flashcardBox.classList.remove('flipped');
         isFlipped = false;
     }
-    
-    // 2. Mostra um estado de carregamento
+
     cardFrente.textContent = 'Carregando...';
-    cardVerso.textContent = ''; // Limpa o verso
+    cardVerso.textContent = ''; 
     idiomaDisplay.textContent = '';
 
-    // 3. Busca o novo card
     fetch('/revisar') 
         .then(response => {
             if (!response.ok) {
