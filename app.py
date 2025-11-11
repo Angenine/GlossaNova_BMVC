@@ -1,10 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 import json
 import random
-import os  # <- NOVO: Importe o módulo OS
+import os 
 
-# --- Define o caminho absoluto para o projeto ---
-basedir = os.path.abspath(os.path.dirname(__file__)) # <- NOVO
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 class Flashcard:
     def __init__(self, frente: str, verso: str, idioma: str = 'Inglês'):
@@ -25,7 +24,6 @@ class Flashcard:
 
 class Baralho:
     
-    # <- NOVO: Usa o caminho absoluto para encontrar o JSON
     ARQUIVO_DADOS = os.path.join(basedir, 'flashcards.json') 
     
     def __init__(self):
@@ -38,7 +36,6 @@ class Baralho:
 
     def _carregar_dados(self):
         try:
-            # Agora ele vai abrir o arquivo pelo caminho completo
             with open(self.ARQUIVO_DADOS, 'r', encoding='utf-8') as f:
                 dados = json.load(f)
                 self.cartoes = [Flashcard(**dado) for dado in dados]
@@ -65,24 +62,19 @@ class Baralho:
             return self.cartoes[indice]
         return None
 
-# --- Código Flask ---
 app = Flask(__name__)
 baralho_principal = Baralho() 
 
-# --- ROTA ATUALIZADA ---
 @app.route('/')
 def home():
     """Rota principal: Agora exibe o painel (dashboard)."""
     return render_template('index.html')
 
-
-# --- NOVA ROTA ---
 @app.route('/flashcards', methods=['GET', 'POST'])
 def pagina_flashcards():
     """Rota para a página de flashcards (adicionar e listar)."""
     
     if request.method == 'POST':
-        # Lógica de criação de card que estava em home()
         frente = request.form.get('frente')
         verso = request.form.get('verso')
         idioma = request.form.get('idioma', 'Desconhecido')
@@ -92,11 +84,8 @@ def pagina_flashcards():
             baralho_principal.adicionar_cartao(novo_cartao) 
             return redirect(url_for('pagina_flashcards')) 
 
-    # Exibição (GET)
     return render_template('flashcards.html', cartoes=baralho_principal.buscar_todos())
 
-
-# --- ROTA DE API (Sem alteração) ---
 @app.route('/revisar')
 def revisar():
     """Rota para revisão (API), retorna um flashcard aleatório em JSON."""
