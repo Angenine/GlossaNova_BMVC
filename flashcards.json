@@ -13,5 +13,25 @@
         "frente": "Pig",
         "verso": "Porco",
         "idioma": "Inglês"
+    },
+    {
+        "frente": "Car",
+        "verso": "Carro",
+        "idioma": "Inglês"
+    },
+    {
+        "frente": "Book",
+        "verso": "Livro",
+        "idioma": "Inglês"
+    },
+    {
+        "frente": "born",
+        "verso": "nascer",
+        "idioma": "Inglês"
+    },
+    {
+        "frente": "submarines",
+        "verso": "submarinos",
+        "idioma": "Inglês"
     }
 ]
