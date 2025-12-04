@@ -1,13 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
-from flask_login import LoginManager, UserMixin, login_user, login_required, current_user # importando login
+from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user # importando login
 import json
 import random
 import os
 
-# --- Usuários temporarios - substituir por DB com senhas hasheadas ---
+# --- Usuários Mokados - temporarios substituir por DB com senhas hasheadas ---
 USERS = {
-    'teste@app.com': {'password': '123', 'id': 1, 'name': 'Usuário Teste'},
-    'admin@app.com': {'password': 'admin', 'id': 2, 'name': 'Administrador'}
+    'teste@email.com': {'email': 'teste@email.com', 'password': '123', 'id': 1, 'name': 'Usuário Teste'},
+    'admin@email.com': {'email': 'admin@email.com', 'password': 'admin', 'id': 2, 'name': 'Administrador'}
 }
 
 # --- Define o caminho absoluto para o projeto (não alteradas) ---
@@ -244,7 +244,7 @@ def api_salvar_rapido():
 
 # Rota protegida que só o admin pode ver
 @app.route('/dashboard_restrito')
-@login_required
+@login_required # Apenas usuários logados podem acessar
 def dashboard_restrito():
     """Rota restrita a usuários logados."""
     # Exemplo de verificação de permissão (não é o ideal, mas funciona para um mock)
