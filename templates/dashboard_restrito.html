@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Área Restrita</title>
+</head>
+<body>
+    <h1>Área de Administração</h1>
+    <p>Bem-vindo(a), {{ user.name }}. Esta página só pode ser vista por usuários autenticados (Admin).</p>
+    <p><a href="{{ url_for('home') }}">Voltar para Home</a></p>
+</body>
+</html>
