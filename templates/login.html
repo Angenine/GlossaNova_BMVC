@@ -1,26 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GlossaNova</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        // Paleta roxa para consistência
+                        primary: '#6B46C1', 
+                    }
+                }
+            }
+        }
+    </script>
 </head>
-<body>
-    <h1>Acessar Conta</h1>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul class="flashes">
-            {% for category, message in messages %}
-                <li class="{{ category }}">{{ message }}</li>
-            {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
-    <form method="POST">
-        E-mail: <input type="email" name="email" required><br>
-        Senha: <input type="password" name="password" required><br>
-        <label>
-            <input type="checkbox" name="remember"> Lembrar-me
-        </label><br>
-        <button type="submit">Entrar</button>
-    </form>
+<body class="bg-gray-100 flex flex-col min-h-screen font-sans">
+
+    <header class="bg-white shadow-sm">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <a href="{{ url_for('home') }}" class="flex-shrink-0 flex items-center">
+                    <img class="h-8 w-auto" src="{{ url_for('static', filename='img/Logo.png') }}" alt="GlossaNova Logo">
+                    <span class="text-2xl font-bold text-gray-800 ml-2">GlossaNova</span>
+                </a>
+                </div>
+        </nav>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        
+        <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-xl shadow-lg">
+
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
+                    Acesse sua conta
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    Comece a praticar seu vocabulário agora.
+                </p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="space-y-3">
+                    {% for category, message in messages %}
+                        {% set style = {'success': 'bg-green-100 border-green-400 text-green-700', 'danger': 'bg-red-100 border-red-400 text-red-700', 'info': 'bg-blue-100 border-blue-400 text-blue-700'}.get(category, 'bg-gray-100 border-gray-400 text-gray-700') %}
+                        <div class="border px-4 py-3 rounded relative text-sm {{ style }}" role="alert">
+                            <span class="block sm:inline">{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <form class="mt-8 space-y-6" action="{{ url_for('login') }}" method="POST">
+                
+                <div>
+                    <label for="email-address" class="sr-only">Endereço de E-mail</label>
+                    <input id="email-address" name="email" type="email" autocomplete="email" required
+                           class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                           placeholder="Endereço de E-mail">
+                </div>
+                
+                <div>
+                    <label for="password" class="sr-only">Senha</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required
+                           class="appearance-none relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
+                           placeholder="Senha">
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember" type="checkbox" 
+                               class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-900">
+                            Lembrar-me
+                        </label>
+                    </div>
+
+                    <div class="text-sm">
+                        <a href="#" class="font-medium text-primary hover:text-purple-700">
+                            Esqueceu a senha?
+                        </a>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit"
+                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition duration-150 ease-in-out shadow-md">
+                        Entrar
+                    </button>
+                </div>
+            </form>
+
+            <div class="text-center">
+                <p class="text-sm text-gray-600">
+                    Não tem uma conta?
+                    <a href="{{ url_for('login') }}" class="font-medium text-primary hover:text-purple-700">
+                        Cadastre-se agora
+                    </a>
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <footer class="text-center py-6 mt-auto bg-gray-200">
+        <p class="text-gray-600">&copy; 2025 GlossaNova</p>
+    </footer>
+
 </body>
 </html>
