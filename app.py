@@ -1,17 +1,38 @@
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user # importando login
+from werkzeug.security import generate_password_hash, check_password_hash # NOVO: Para hashing de senha
 import json
 import random
 import os
 
-# --- Usuários Mokados - temporarios substituir por DB com senhas hasheadas ---
-USERS = {
-    'teste@email.com': {'email': 'teste@email.com', 'password': '123', 'id': 1, 'name': 'Usuário Teste'},
-    'admin@email.com': {'email': 'admin@email.com', 'password': 'admin', 'id': 2, 'name': 'Administrador'}
-}
-
-# --- Define o caminho absoluto para o projeto (não alteradas) ---
+# --- ARQUIVOS DE DADOS E CONSTANTES ---
 basedir = os.path.abspath(os.path.dirname(__file__))
+# NOVO: Caminho para o arquivo de usuários
+USERS_FILE = os.path.join(basedir, 'users.json') 
+FLASHCARDS_FILE = os.path.join(basedir, 'flashcards.json')
+
+# --- HELPERS DE PERSISTÊNCIA DE USUÁRIOS (NOVOS) ---
+
+def load_users():
+    """Carrega a lista de usuários do arquivo JSON."""
+    if not os.path.exists(USERS_FILE):
+        return {}
+    try:
+        with open(USERS_FILE, 'r', encoding='utf-8') as f:
+            # Chaves são os user_ids
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        # Cria um arquivo novo se estiver vazio/corrompido
+        return {}
+
+def save_users(users_data):
+    """Salva a lista atual de usuários no arquivo JSON."""
+    with open(USERS_FILE, 'w', encoding='utf-8') as f:
+        # Garante que as chaves sejam strings (IDs)
+        data_to_save = {str(k): v for k, v in users_data.items()}
+        json.dump(data_to_save, f, ensure_ascii=False, indent=4)
+
+# ----------------- CLASSES DE DADOS E LÓGICA -----------------
 
 class Flashcard:
     def __init__(self, frente: str, verso: str, idioma: str = 'Inglês'):
@@ -71,43 +92,99 @@ class Baralho:
             return self.cartoes[indice]
         return None
 
-# ----------------- CLASSE USER PARA FLASK-LOGIN ----------------
+# ----------------- CLASSE USER PARA FLASK-LOGIN (ATUALIZADA) ----------------
 class User(UserMixin):
     """Classe que representa um usuário para o Flask-Login."""
-    def __init__(self, id, email, name):
-        # o id precisa ser uma string para o Flask-Login
-        self.id = str(id) 
+    # NOVO: Inclui password_hash para autenticação segura
+    def __init__(self, id, email, name, password_hash):
+        self.id = str(id)
         self.email = email
         self.name = name
+        self.password_hash = password_hash 
 
-    # Método estático para buscar usuário pelo ID
+    @staticmethod
+    def get_next_id():
+        """Gera o próximo ID sequencial baseado nas chaves existentes."""
+        if not USERS:
+            return 1
+        return max([int(uid) for uid in USERS.keys()]) + 1
+
     @staticmethod
     def get(user_id):
+        """Busca um usuário pelo ID na base de dados carregada."""
+        user_data = USERS.get(str(user_id))
+        if not user_data:
+            return None
+        # Desempacota o dicionário para criar o objeto User
+        return User(**user_data) 
+
+    @staticmethod
+    def get_by_email(email):
+        """Busca um usuário pelo e-mail (usado no login)."""
         for user_data in USERS.values():
-            if str(user_data['id']) == str(user_id):
-                return User(user_data['id'], user_data['email'], user_data['name'])
+            if user_data['email'].lower() == email.lower():
+                # Retorna o objeto User com os dados encontrados
+                return User(**user_data) 
         return None
+
+    @staticmethod
+    def create(name, email, password):
+        """Cria, hashea e persiste um novo usuário no JSON."""
+        global USERS
+        
+        # 1. Verifica se o usuário já existe
+        if User.get_by_email(email):
+            return None
+        
+        # 2. Gera ID e hash
+        new_id = User.get_next_id()
+        # CRIPTOGRAFIA DE SENHA
+        hashed_password = generate_password_hash(password)
+        
+        # 3. Prepara os dados
+        new_user_data = {
+            'id': str(new_id),
+            'name': name,
+            'email': email,
+            'password_hash': hashed_password # Salva o hash
+        }
+        
+        # 4. Adiciona ao dicionário em memória
+        USERS[str(new_id)] = new_user_data
+        
+        # 5. Persiste no JSON
+        save_users(USERS)
+        
+        return User(**new_user_data)
 
 # ----------------- INICIALIZAÇÃO E CONFIGURAÇÃO FLASK -----------------
 
+# NOVO: Carrega usuários persistentes (ou vazio se o arquivo não existir)
+USERS = load_users()
+
+# Inicialização de Usuários Mockados (Apenas na primeira execução se USERS estiver vazio)
+if not USERS:
+    print("--- Criando usuários iniciais e persistindo em users.json ---")
+    User.create(name='Usuário Teste', email='teste@email.com', password='123')
+    User.create(name='Administrador', email='admin@email.com', password='admin')
+
+
 app = Flask(__name__)
-# Chave Secreta: para sessões seguras.
-app.config['SECRET_KEY'] = 'uma_chave_secreta_aleatoria' 
-baralho_principal = Baralho() 
+app.config['SECRET_KEY'] = 'uma_chave_secreta_aleatoria'
+baralho_principal = Baralho()
 
 # Configura o Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-# Define para onde redirecionar se o usuário não estiver logado
-login_manager.login_view = 'login' 
-# Mensagem exibida para o usuário (opcional)
-login_manager.login_message = "Por favor, faça login para acessar esta página." 
+login_manager.login_view = 'login'
+login_manager.login_message = "Por favor, faça login para acessar esta página."
 login_manager.login_message_category = "info"
 
 
-# Loader de usuário: diz ao Flask-Login como carregar um usuário a partir do ID na sessão
+# Loader de usuário
 @login_manager.user_loader
 def load_user(user_id):
+    # Usa o método estático atualizado
     return User.get(user_id)
  
 # --- ROTAS (COM NOVOS AJUSTES) ---
@@ -256,34 +333,56 @@ def dashboard_restrito():
     
 # ----------------- NOVAS ROTAS DE AUTENTICAÇÃO -----------------
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """Rota para registrar novos usuários e persistir no JSON."""
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+
+        if not name or not email or not password:
+            flash('Por favor, preencha todos os campos.', 'danger')
+            return render_template('register.html')
+
+        new_user = User.create(name, email, password)
+
+        if new_user:
+            flash('Cadastro realizado com sucesso! Faça seu login.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('O e-mail já está em uso.', 'danger')
+            return render_template('register.html')
+
+    return render_template('register.html')
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    """Rota para o login do usuário."""
+    """Rota para o login do usuário (Atualizada para usar hash e persistência)."""
     if current_user.is_authenticated:
-        # Se já estiver logado, redireciona para a home
         return redirect(url_for('home'))
 
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
-        remember = request.form.get('remember') # Campo "Lembrar-me"
+        remember = True if request.form.get('remember') else False
 
-        # 1. Busca o usuário no dicionário (simulação de DB)
-        user_data = USERS.get(email)
+        # 1. Busca o usuário pelo email usando a base persistente
+        user = User.get_by_email(email)
 
-        # 2. Verifica se o usuário existe e se a senha está correta
-        if user_data and user_data['password'] == password: 
+        # 2. Verifica se o usuário existe E se a senha criptografada confere
+        if user and check_password_hash(user.password_hash, password):
             
-            # Cria o objeto User para o Flask-Login
-            user_obj = User(user_data['id'], user_data['email'], user_data['name'])
+            # Faz o login do usuário
+            login_user(user, remember=remember)
             
-            # Faz o login do usuário na sessão
-            # remember=True mantém o usuário logado após fechar o navegador
-            login_user(user_obj, remember=bool(remember)) 
-            
-            # Redireciona o usuário para a página de origem (se houver) ou para a home
+            # Redireciona para a próxima página ou para a home
             next_page = request.args.get('next')
-            flash(f'Bem-vindo(a), {user_data["name"]}!', 'success')
+            flash(f'Bem-vindo(a) de volta, {user.name}!', 'success')
             return redirect(next_page or url_for('home'))
         else:
             # Mensagem de erro
