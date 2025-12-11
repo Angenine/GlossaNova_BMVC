@@ -4,5 +4,11 @@
         "name": "Admin",
         "email": "admin@app.com",
         "password_hash": "scrypt:32768:8:1$rTU2vOjiFeAX13ar$1e0760c4ceeb94d0f0300d98d0154d837e6d532573129fdd2c8bc3a819f89049910cf3fb95971da5c4e7a610ff680cf9337492354c0cd23572f8ad17fac4b021"
+    },
+    "2": {
+        "id": "2",
+        "name": "Angeline Teste",
+        "email": "angeline@gmail.com",
+        "password_hash": "scrypt:32768:8:1$ai2ER5JzEWLJ3mI8$ebcac83ba1e44dc6576a0d305328cdcfbaec489cea9e0588b5b657bce3ae2cd1c8581eea23492002b8fd655e2819d8e0d083f51d7a22c88b50250adb598a28ed"
     }
 }
