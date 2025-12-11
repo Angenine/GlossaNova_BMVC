@@ -1,0 +1,8 @@
+{
+    "1": {
+        "id": "1",
+        "name": "Admin",
+        "email": "admin@app.com",
+        "password_hash": "scrypt:32768:8:1$rTU2vOjiFeAX13ar$1e0760c4ceeb94d0f0300d98d0154d837e6d532573129fdd2c8bc3a819f89049910cf3fb95971da5c4e7a610ff680cf9337492354c0cd23572f8ad17fac4b021"
+    }
+}
