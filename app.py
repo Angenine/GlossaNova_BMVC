@@ -65,7 +65,6 @@ class Baralho:
     def buscar_todos(self):
         return self.cartoes
 
-# --- CLASSE DE CONTEÚDO (IMERSÃO) ---
 class ConteudoImersao:
     def __init__(self, titulo, tipo, texto_original, traducao):
         self.titulo = titulo
@@ -73,7 +72,6 @@ class ConteudoImersao:
         self.texto_original = texto_original
         self.traducao = traducao
 
-# Conteúdos Mockados
 conteudos_imersao = [
     ConteudoImersao(
         titulo="Yellow Submarine - The Beatles",
@@ -89,7 +87,6 @@ conteudos_imersao = [
     )
 ]
 
-# --- CLASSE USER (AUTH) ---
 class User(UserMixin):
     def __init__(self, id, email, name, password_hash):
         self.id = str(id)
@@ -128,19 +125,21 @@ class User(UserMixin):
 # ----------------- INICIALIZAÇÃO -----------------
 
 USERS = load_users()
-# Cria admin se não existir
 if not USERS:
     User.create(name='Admin', email='admin@app.com', password='admin')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'chave_secreta_bmvc4'
 
-# CONFIGURAÇÃO DO SOCKETIO
+# LISTA GLOBAL PARA HISTÓRICO DE CHAT
+CHAT_HISTORY = []
+
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+login_manager.login_message = "Por favor, faça login para acessar esta página." # Mensagem ao tentar acessar sem logar
 login_manager.login_message_category = "info"
 
 @login_manager.user_loader
@@ -156,7 +155,7 @@ def home():
     return render_template('index.html')
 
 @app.route('/flashcards', methods=['GET', 'POST'])
-@login_required
+@login_required # <--- PROTEGIDO
 def pagina_flashcards():
     if request.method == 'POST':
         frente = request.form.get('frente')
@@ -170,6 +169,7 @@ def pagina_flashcards():
     return render_template('flashcards.html', cartoes=baralho_principal.buscar_todos())
 
 @app.route('/revisar')
+@login_required # <--- PROTEGIDO
 def revisar():
     cartoes = baralho_principal.buscar_todos()
     if not cartoes: return jsonify({'erro': 'Nenhum flashcard.'}), 404
@@ -179,10 +179,12 @@ def revisar():
 # --- ROTAS QUIZ ---
 
 @app.route('/quiz')
+@login_required # <--- AGORA PROTEGIDO
 def pagina_quiz():
     return render_template('quiz.html')
 
 @app.route('/api/iniciar_quiz')
+@login_required # <--- AGORA PROTEGIDO
 def api_iniciar_quiz():
     todos_cartoes = baralho_principal.buscar_todos()
     if len(todos_cartoes) < 4: return jsonify({'erro': True, 'mensagem': 'Precisa de 4 cartas.'})
@@ -200,12 +202,14 @@ def api_iniciar_quiz():
 # --- ROTAS IMERSÃO ---
 
 @app.route('/imersao')
+@login_required # <--- AGORA PROTEGIDO
 def pagina_imersao():
     """Mostra o texto da semana."""
     conteudo = conteudos_imersao[0] 
     return render_template('imersao.html', conteudo=conteudo)
 
 @app.route('/api/salvar_rapido', methods=['POST'])
+@login_required # <--- AGORA PROTEGIDO
 def api_salvar_rapido():
     """API para salvar flashcard via AJAX."""
     data = request.get_json()
@@ -217,59 +221,41 @@ def api_salvar_rapido():
         return jsonify({'sucesso': True})
     return jsonify({'erro': 'Dados inválidos'}), 400
 
-# --- ROTA DE ACESSO RESTRITO =---
+# --- ROTA DA COMUNIDADE (WEBSOCKET) ---
+
+@app.route('/comunidade')
+@login_required # <--- PROTEGIDO
+def pagina_comunidade():
+    return render_template('comunidade.html', user=current_user, history=CHAT_HISTORY)
+
+# --- ROTA DE ACESSO RESTRITO (Obrigatório para BMVC 4) ---
 
 @app.route('/dashboard_restrito')
-@login_required  # Protege a rota: só logado entra
+@login_required
 def dashboard_restrito():
     """Página exclusiva para administradores."""
-    # Verificação de permissão (Simples)
     if current_user.email != 'admin@app.com':
         flash('Acesso negado: Esta área é restrita a administradores.', 'danger')
         return redirect(url_for('home'))
     
-    # Se for admin, renderiza a página
     return render_template('dashboard_restrito.html', user=current_user)
-
-CHAT_HISTORY = []
-
-# --- ROTA DA COMUNIDADE (WEBSOCKET) ---
-
-@app.route('/comunidade')
-@login_required
-def pagina_comunidade():
-    """Renderiza a sala de chat e passa o histórico."""
-    # Passamos o CHAT_HISTORY para o HTML
-    return render_template('comunidade.html', user=current_user, history=CHAT_HISTORY)
 
 # --- EVENTOS WEBSOCKET ---
 
 @socketio.on('connect')
 def handle_connect():
-    print(f"Cliente conectado: {current_user.name if current_user.is_authenticated else 'Anon'}")
+    # Só imprime se estiver logado para evitar erros, embora a página seja protegida
+    if current_user.is_authenticated:
+        print(f"Cliente conectado: {current_user.name}")
 
 @socketio.on('enviar_mensagem')
 def handle_mensagem(data):
-    """Recebe mensagem, salva no histórico e retransmite."""
     msg = data.get('mensagem')
     if msg and current_user.is_authenticated:
         timestamp = datetime.now().strftime('%H:%M')
-        
-        # Cria o objeto da mensagem
-        nova_msg = {
-            'usuario': current_user.name,
-            'texto': msg,
-            'hora': timestamp
-        }
-        
-        # 1. Salva na memória do servidor
+        nova_msg = {'usuario': current_user.name, 'texto': msg, 'hora': timestamp}
         CHAT_HISTORY.append(nova_msg)
-        
-        # Opcional: Limita o histórico às últimas 50 mensagens para não pesar
-        if len(CHAT_HISTORY) > 50:
-            CHAT_HISTORY.pop(0)
-
-        # 2. Emite para TODOS os conectados
+        if len(CHAT_HISTORY) > 50: CHAT_HISTORY.pop(0)
         emit('nova_mensagem', nova_msg, broadcast=True)
 
 # --- ROTAS AUTH ---
