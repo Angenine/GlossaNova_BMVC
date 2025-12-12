@@ -33,5 +33,10 @@
         "frente": "submarines",
         "verso": "submarinos",
         "idioma": "Inglês"
+    },
+    {
+        "frente": "hungry",
+        "verso": "faminto",
+        "idioma": "Inglês"
     }
 ]

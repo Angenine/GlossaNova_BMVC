@@ -1,0 +1,62 @@
+[
+    {
+        "titulo": "Imagine - John Lennon",
+        "tipo": "Música",
+        "texto_original": "Imagine there's no heaven\nIt's easy if you try\nNo hell below us\nAbove us only sky",
+        "traducao": "Imagine que não há paraíso\nÉ fácil se você tentar\nNenhum inferno abaixo de nós\nAcima de nós apenas o céu"
+    },
+    {
+        "titulo": "O Pequeno Príncipe (Cap. 21)",
+        "tipo": "Livro",
+        "texto_original": "It is only with the heart that one can see rightly; what is essential is invisible to the eye.",
+        "traducao": "Só se vê bem com o coração; o essencial é invisível aos olhos."
+    },
+    {
+        "titulo": "Steve Jobs (Discurso em Stanford)",
+        "tipo": "Discurso",
+        "texto_original": "Your time is limited, so don't waste it living someone else's life.\nStay hungry. Stay foolish.",
+        "traducao": "Seu tempo é limitado, então não o desperdice vivendo a vida de outra pessoa.\nContinue faminto. Continue tolo."
+    },
+    {
+        "titulo": "Friends (Tema de Abertura)",
+        "tipo": "Série",
+        "texto_original": "So no one told you life was gonna be this way\nYour job's a joke, you're broke\nYour love life's DOA",
+        "traducao": "Então ninguém te disse que a vida seria assim\nSeu emprego é uma piada, você está quebrado\nSua vida amorosa está morta na chegada"
+    },
+    {
+        "titulo": "Alice no País das Maravilhas",
+        "tipo": "Livro",
+        "texto_original": "Curiouser and curiouser!",
+        "traducao": "Cada vez mais curioso!"
+    },
+    {
+        "titulo": "Star Wars (Mestre Yoda)",
+        "tipo": "Filme",
+        "texto_original": "Do. Or do not. There is no try.",
+        "traducao": "Faça. Ou não faça. Não existe tentar."
+    },
+    {
+        "titulo": "Bohemian Rhapsody - Queen",
+        "tipo": "Música",
+        "texto_original": "Is this the real life?\nIs this just fantasy?\nCaught in a landslide\nNo escape from reality",
+        "traducao": "Isso é a vida real?\nÉ apenas fantasia?\nPreso em um desmoronamento\nSem escapatória da realidade"
+    },
+    {
+        "titulo": "O Poderoso Chefão",
+        "tipo": "Filme",
+        "texto_original": "I'm gonna make him an offer he can't refuse.",
+        "traducao": "Eu vou fazer uma oferta que ele não poderá recusar."
+    },
+    {
+        "titulo": "Harry Potter (Dumbledore)",
+        "tipo": "Livro",
+        "texto_original": "It does not do to dwell on dreams and forget to live.",
+        "traducao": "Não vale a pena viver sonhando e esquecer de viver."
+    },
+    {
+        "titulo": "Yellow Submarine - The Beatles",
+        "tipo": "Música",
+        "texto_original": "In the town where I was born\nLived a man who sailed to sea\nAnd he told us of his life\nIn the land of submarines",
+        "traducao": "Na cidade onde eu nasci\nViveu um homem que navegou para o mar\nE ele nos contou sobre sua vida\nNa terra dos submarinos"
+    }
+]

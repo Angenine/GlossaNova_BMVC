@@ -1,21 +1,22 @@
+import os
+import json
+import random
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, current_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash 
 from flask_socketio import SocketIO, emit
-import json
-import random
-import os
-from datetime import datetime
 
-# --- ARQUIVOS DE DADOS E CONSTANTES ---
+# --- CONFIGURAÇÕES E ARQUIVOS ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 USERS_FILE = os.path.join(basedir, 'users.json') 
 FLASHCARDS_FILE = os.path.join(basedir, 'flashcards.json')
+CONTENT_FILE = os.path.join(basedir, 'content.json')
+ROTATION_FILE = os.path.join(basedir, 'rotation.json')
 
-# --- PERSISTÊNCIA DE USUÁRIOS ---
+# --- PERSISTÊNCIA (JSON) ---
 def load_users():
-    if not os.path.exists(USERS_FILE):
-        return {}
+    if not os.path.exists(USERS_FILE): return {}
     try:
         with open(USERS_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -27,19 +28,67 @@ def save_users(users_data):
         data_to_save = {str(k): v for k, v in users_data.items()}
         json.dump(data_to_save, f, ensure_ascii=False, indent=4)
 
-# ----------------- CLASSES DE DADOS E LÓGICA -----------------
+# --- LÓGICA DE CONTEÚDO (IMERSÃO) ---
+class ConteudoImersao:
+    def __init__(self, titulo, tipo, texto_original, traducao):
+        self.titulo = titulo
+        self.tipo = tipo 
+        self.texto_original = texto_original
+        self.traducao = traducao
 
+def carregar_conteudos():
+    try:
+        if os.path.exists(CONTENT_FILE):
+            with open(CONTENT_FILE, 'r', encoding='utf-8') as f:
+                return [ConteudoImersao(**d) for d in json.load(f)]
+    except: pass
+    return []
+
+def obter_conteudo_semanal(todos_conteudos):
+    """Retorna 2 textos, atualizando a cada 7 dias."""
+    if not todos_conteudos: return []
+    
+    estado = {}
+    # Carrega estado anterior
+    if os.path.exists(ROTATION_FILE):
+        try:
+            with open(ROTATION_FILE, 'r') as f:
+                estado = json.load(f)
+        except: pass
+    
+    last_update_str = estado.get('last_update', '2000-01-01')
+    current_index = estado.get('current_index', 0)
+    
+    last_update = datetime.strptime(last_update_str, '%Y-%m-%d')
+    agora = datetime.now()
+    
+    # Verifica se passou 7 dias
+    if (agora - last_update).days >= 7:
+        current_index = (current_index + 2) % len(todos_conteudos)
+        with open(ROTATION_FILE, 'w') as f:
+            json.dump({
+                'last_update': agora.strftime('%Y-%m-%d'),
+                'current_index': current_index
+            }, f)
+            
+    # Seleciona 2 itens 
+    item1 = todos_conteudos[current_index]
+    item2 = todos_conteudos[(current_index + 1) % len(todos_conteudos)]
+    
+    return [item1, item2]
+
+# --- CLASSES / MODELOS ---
 class Flashcard:
     def __init__(self, frente: str, verso: str, idioma: str = 'Inglês'):
         self.frente = frente  
         self.verso = verso    
         self.idioma = idioma  
 
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> dict:
         return {'frente': self.frente, 'verso': self.verso, 'idioma': self.idioma}
 
 class Baralho:
-    ARQUIVO_DADOS = os.path.join(basedir, 'flashcards.json') 
+    ARQUIVO_DADOS = FLASHCARDS_FILE
     
     def __init__(self):
         self.cartoes = []
@@ -64,28 +113,6 @@ class Baralho:
             
     def buscar_todos(self):
         return self.cartoes
-
-class ConteudoImersao:
-    def __init__(self, titulo, tipo, texto_original, traducao):
-        self.titulo = titulo
-        self.tipo = tipo 
-        self.texto_original = texto_original
-        self.traducao = traducao
-
-conteudos_imersao = [
-    ConteudoImersao(
-        titulo="Yellow Submarine - The Beatles",
-        tipo="Música",
-        texto_original="In the town where I was born\nLived a man who sailed to sea\nAnd he told us of his life\nIn the land of submarines",
-        traducao="Na cidade onde eu nasci\nViveu um homem que navegou para o mar\nE ele nos contou sobre sua vida\nNa terra dos submarinos"
-    ),
-    ConteudoImersao(
-        titulo="O Pequeno Príncipe (Trecho)",
-        tipo="Livro",
-        texto_original="And now here is my secret, a very simple secret: It is only with the heart that one can see rightly; what is essential is invisible to the eye.",
-        traducao="E aqui está o meu segredo, um segredo muito simples: Só se vê bem com o coração; o essencial é invisível aos olhos."
-    )
-]
 
 class User(UserMixin):
     def __init__(self, id, email, name, password_hash):
@@ -122,25 +149,18 @@ class User(UserMixin):
         save_users(USERS)
         return User(**new_user_data)
 
-# ----------------- INICIALIZAÇÃO -----------------
-
+# --- SETUP INICIAL ---
 USERS = load_users()
-if not USERS:
-    User.create(name='Admin', email='admin@app.com', password='admin')
+if not USERS: User.create('Admin', 'admin@app.com', 'admin')
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'chave_secreta_bmvc4'
-
-# LISTA GLOBAL PARA HISTÓRICO DE CHAT
 CHAT_HISTORY = []
-
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
-login_manager.login_message = "Por favor, faça login para acessar esta página." # Mensagem ao tentar acessar sem logar
-login_manager.login_message_category = "info"
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -148,105 +168,81 @@ def load_user(user_id):
  
 baralho_principal = Baralho()
 
-# --- ROTAS PRINCIPAIS ---
-
+# --- ROTAS GERAIS ---
 @app.route('/')
 def home():
     return render_template('index.html')
 
 @app.route('/flashcards', methods=['GET', 'POST'])
-@login_required # <--- PROTEGIDO
+@login_required
 def pagina_flashcards():
     if request.method == 'POST':
         frente = request.form.get('frente')
         verso = request.form.get('verso')
         idioma = request.form.get('idioma', 'Desconhecido')
         if frente and verso:
-            novo_cartao = Flashcard(frente, verso, idioma)  
-            baralho_principal.adicionar_cartao(novo_cartao)  
+            baralho_principal.adicionar_cartao(Flashcard(frente, verso, idioma))  
             flash('Flashcard adicionado!', 'success')
             return redirect(url_for('pagina_flashcards'))  
     return render_template('flashcards.html', cartoes=baralho_principal.buscar_todos())
 
 @app.route('/revisar')
-@login_required # <--- PROTEGIDO
+@login_required
 def revisar():
     cartoes = baralho_principal.buscar_todos()
     if not cartoes: return jsonify({'erro': 'Nenhum flashcard.'}), 404
-    cartao = random.choice(cartoes)
-    return jsonify(cartao.to_dict())
+    return jsonify(random.choice(cartoes).to_dict())
 
-# --- ROTAS QUIZ ---
-
+# --- QUIZ ---
 @app.route('/quiz')
-@login_required # <--- AGORA PROTEGIDO
+@login_required
 def pagina_quiz():
     return render_template('quiz.html')
 
 @app.route('/api/iniciar_quiz')
-@login_required # <--- AGORA PROTEGIDO
+@login_required
 def api_iniciar_quiz():
-    todos_cartoes = baralho_principal.buscar_todos()
-    if len(todos_cartoes) < 4: return jsonify({'erro': True, 'mensagem': 'Precisa de 4 cartas.'})
-    qtd = min(len(todos_cartoes), 10)
-    cartas = random.sample(todos_cartoes, qtd)
+    todos = baralho_principal.buscar_todos()
+    if len(todos) < 4: return jsonify({'erro': True, 'mensagem': 'Precisa de 4 cartas.'})
+    
+    qtd = min(len(todos), 10)
+    cartas = random.sample(todos, qtd)
     quiz_data = []
+    
     for correta in cartas:
-        opcoes = [c for c in todos_cartoes if c.frente != correta.frente]
+        opcoes = [c for c in todos if c.frente != correta.frente]
         erradas = random.sample(opcoes, min(len(opcoes), 3))
         alt = erradas + [correta]
         random.shuffle(alt)
         quiz_data.append({'pergunta': correta.frente, 'resposta_correta': correta.verso, 'alternativas': [c.verso for c in alt]})
     return jsonify(quiz_data)
 
-# --- ROTAS IMERSÃO ---
-
+# --- IMERSÃO (ATUALIZADO) ---
 @app.route('/imersao')
-@login_required # <--- AGORA PROTEGIDO
+@login_required
 def pagina_imersao():
-    """Mostra o texto da semana."""
-    conteudo = conteudos_imersao[0] 
-    return render_template('imersao.html', conteudo=conteudo)
+    todos = carregar_conteudos()
+    if not todos:
+        flash('Sem conteúdo disponível.', 'warning')
+        return redirect(url_for('home'))
+        
+    conteudos_semana = obter_conteudo_semanal(todos)
+    return render_template('imersao.html', conteudos=conteudos_semana)
 
 @app.route('/api/salvar_rapido', methods=['POST'])
-@login_required # <--- AGORA PROTEGIDO
+@login_required
 def api_salvar_rapido():
-    """API para salvar flashcard via AJAX."""
     data = request.get_json()
-    frente = data.get('frente')
-    verso = data.get('verso')
-    if frente and verso:
-        novo_cartao = Flashcard(frente, verso, "Inglês")
-        baralho_principal.adicionar_cartao(novo_cartao)
+    if data.get('frente') and data.get('verso'):
+        baralho_principal.adicionar_cartao(Flashcard(data['frente'], data['verso'], "Inglês"))
         return jsonify({'sucesso': True})
     return jsonify({'erro': 'Dados inválidos'}), 400
 
-# --- ROTA DA COMUNIDADE (WEBSOCKET) ---
-
+# --- COMUNIDADE ---
 @app.route('/comunidade')
-@login_required # <--- PROTEGIDO
+@login_required
 def pagina_comunidade():
     return render_template('comunidade.html', user=current_user, history=CHAT_HISTORY)
-
-# --- ROTA DE ACESSO RESTRITO (Obrigatório para BMVC 4) ---
-
-@app.route('/dashboard_restrito')
-@login_required
-def dashboard_restrito():
-    """Página exclusiva para administradores."""
-    if current_user.email != 'admin@app.com':
-        flash('Acesso negado: Esta área é restrita a administradores.', 'danger')
-        return redirect(url_for('home'))
-    
-    return render_template('dashboard_restrito.html', user=current_user)
-
-# --- EVENTOS WEBSOCKET ---
-
-@socketio.on('connect')
-def handle_connect():
-    # Só imprime se estiver logado para evitar erros, embora a página seja protegida
-    if current_user.is_authenticated:
-        print(f"Cliente conectado: {current_user.name}")
 
 @socketio.on('enviar_mensagem')
 def handle_mensagem(data):
@@ -258,16 +254,21 @@ def handle_mensagem(data):
         if len(CHAT_HISTORY) > 50: CHAT_HISTORY.pop(0)
         emit('nova_mensagem', nova_msg, broadcast=True)
 
-# --- ROTAS AUTH ---
+# --- ADMIN ---
+@app.route('/dashboard_restrito')
+@login_required
+def dashboard_restrito():
+    if current_user.email != 'admin@app.com':
+        flash('Acesso negado.', 'danger')
+        return redirect(url_for('home'))
+    return render_template('dashboard_restrito.html', user=current_user, all_users=USERS)
 
+# --- AUTH ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated: return redirect(url_for('home'))
     if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        if User.create(name, email, password):
+        if User.create(request.form.get('name'), request.form.get('email'), request.form.get('password')):
             flash('Cadastro ok!', 'success')
             return redirect(url_for('login'))
         else:
@@ -278,15 +279,13 @@ def register():
 def login():
     if current_user.is_authenticated: return redirect(url_for('home'))
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = User.get_by_email(email)
-        if user and check_password_hash(user.password_hash, password):
+        user = User.get_by_email(request.form.get('email'))
+        if user and check_password_hash(user.password_hash, request.form.get('password')):
             login_user(user)
-            flash(f'Olá, {user.name}!', 'success')
+            flash(f'Bem-vindo, {user.name}!', 'success')
             return redirect(url_for('home'))
         else:
-            flash('Erro no login.', 'danger')
+            flash('Login falhou.', 'danger')
     return render_template('login.html')
 
 @app.route('/logout')
@@ -296,6 +295,5 @@ def logout():
     flash('Saiu.', 'info')
     return redirect(url_for('home'))
 
-# --- EXECUÇÃO ---
 if __name__ == '__main__':
     socketio.run(app, host='0.0.0.0', port=8000, debug=True)

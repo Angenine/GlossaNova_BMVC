@@ -1,11 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>Área Restrita</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área Restrita - GlossaNova</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <h1>Área de Administração</h1>
-    <p>Bem-vindo(a), {{ user.name }}. Esta página só pode ser vista por usuários autenticados (Admin).</p>
-    <p><a href="{{ url_for('home') }}">Voltar para Home</a></p>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <header class="bg-purple-900 shadow-lg text-white">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center gap-2">
+                    <span class="text-xl font-bold tracking-wide">GlossaNova <span class="font-light opacity-80">| Admin</span></span>
+                </div>
+                
+                <div class="flex items-center gap-4">
+                    <span class="text-sm bg-purple-800 py-1 px-3 rounded-full border border-purple-700">Logado como: {{ user.name }}</span>
+                    
+                    <a href="{{ url_for('home') }}" class="flex items-center px-4 py-2 bg-white text-purple-900 hover:bg-gray-100 rounded-md font-bold transition-all duration-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                        </svg>
+                        Voltar ao Site
+                    </a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+        
+        <div class="mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Painel de Controle</h1>
+                <p class="text-gray-600 mt-1">Gerenciamento de usuários e visão geral do sistema.</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-4">
+                <div class="p-3 bg-purple-100 text-purple-600 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Total de Usuários</p>
+                    <p class="text-2xl font-bold text-gray-800">{{ all_users|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-700">Usuários Cadastrados</h2>
+                <span class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">Base de dados: users.json</span>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 text-gray-600 uppercase text-xs font-bold tracking-wider">
+                            <th class="px-6 py-4 border-b border-gray-200">ID</th>
+                            <th class="px-6 py-4 border-b border-gray-200">Nome</th>
+                            <th class="px-6 py-4 border-b border-gray-200">E-mail</th>
+                            <th class="px-6 py-4 border-b border-gray-200">Hash da Senha</th>
+                            <th class="px-6 py-4 border-b border-gray-200 text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for uid, u_data in all_users.items() %}
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 text-sm text-gray-500 font-mono">#{{ u_data.id }}</td>
+                            <td class="px-6 py-4 text-sm font-medium text-gray-900 flex items-center gap-3">
+                                <div class="h-8 w-8 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-bold text-xs">
+                                    {{ u_data.name[:2].upper() }}
+                                </div>
+                                {{ u_data.name }}
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-600">{{ u_data.email }}</td>
+                            <td class="px-6 py-4 text-xs text-gray-400 font-mono truncate max-w-xs" title="{{ u_data.password_hash }}">
+                                {{ u_data.password_hash[:20] }}...
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                {% if u_data.email == 'admin@app.com' %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                                        Admin
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                        Aluno
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if not all_users %}
+                <div class="p-8 text-center text-gray-500">
+                    Nenhum usuário encontrado no banco de dados.
+                </div>
+            {% endif %}
+        </div>
+
+    </main>
+
+    <footer class="text-center py-6 mt-12 bg-gray-200 text-sm text-gray-600">
+        <p>&copy; 2025 GlossaNova - Módulo Administrativo.</p>
+    </footer>
+
 </body>
 </html>

@@ -31,33 +31,44 @@
 
     <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow">
         
-        <div class="mb-8 border-b pb-4 border-gray-300">
-            <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded uppercase tracking-wide">
-                {{ conteudo.tipo }} da Semana
-            </span>
-            <h1 class="text-3xl font-bold text-gray-900 mt-2">{{ conteudo.titulo }}</h1>
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">Imersão Semanal</h1>
             <p class="text-gray-600 mt-2 text-sm">
-                <span class="font-bold text-primary">Atenção:</span> Clique duas vezes em qualquer palavra do texto em Inglês para criar um Flashcard instantaneamente!
+                <span class="font-bold text-primary">Atenção:</span> Clique duas vezes em qualquer palavra do texto em Inglês para criar um Flashcard! (Atualiza a cada 7 dias)
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {% for conteudo in conteudos %}
+            <div class="bg-white p-6 rounded-lg shadow-sm mb-12">
+                <div class="mb-6 border-b pb-2 border-gray-200">
+                    <span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded uppercase tracking-wide">
+                        {{ conteudo.tipo }}
+                    </span>
+                    <h2 class="text-2xl font-bold text-gray-800 mt-1">{{ conteudo.titulo }}</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="rounded-lg border-l-4 border-primary pl-4">
+                        <h3 class="text-lg font-bold text-gray-800 mb-2">Original (Inglês)</h3>
+                        <div class="text-lg leading-relaxed text-gray-700 whitespace-pre-line" id="texto-ingles-{{ loop.index }}">
+                            {{ conteudo.texto_original }}
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <h3 class="text-lg font-bold text-gray-500 mb-2">Tradução</h3>
+                        <div class="text-lg leading-relaxed text-gray-500 whitespace-pre-line">
+                            {{ conteudo.traducao }}
+                        </div>
+                    </div>
+                </div>
+            </div>
             
-            <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-primary">
-                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">Original (Inglês)</h2>
-                <div class="text-lg leading-relaxed text-gray-700 whitespace-pre-line" id="texto-ingles">
-                    {{ conteudo.texto_original }}
-                </div>
-            </div>
+            {% if not loop.last %}
+                <hr class="border-gray-300 my-8">
+            {% endif %}
+        {% endfor %}
 
-            <div class="bg-gray-50 p-6 rounded-lg shadow-inner border border-gray-200">
-                <h2 class="text-xl font-bold text-gray-500 mb-4 border-b pb-2">Tradução</h2>
-                <div class="text-lg leading-relaxed text-gray-500 whitespace-pre-line">
-                    {{ conteudo.traducao }}
-                </div>
-            </div>
-
-        </div>
     </main>
 
     <div id="modal-add" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">

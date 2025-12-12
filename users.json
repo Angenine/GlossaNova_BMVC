@@ -10,5 +10,11 @@
         "name": "Angeline Teste",
         "email": "angeline@gmail.com",
         "password_hash": "scrypt:32768:8:1$ai2ER5JzEWLJ3mI8$ebcac83ba1e44dc6576a0d305328cdcfbaec489cea9e0588b5b657bce3ae2cd1c8581eea23492002b8fd655e2819d8e0d083f51d7a22c88b50250adb598a28ed"
+    },
+    "3": {
+        "id": "3",
+        "name": "Alicia Teste",
+        "email": "alicia@gmail.com",
+        "password_hash": "scrypt:32768:8:1$u0kVlatRl9MxRE1D$4387358823a6b6b30c93b2ffdb592c710b9bc74e58552723d1cba0469a2161e7dddd5e7c844bf98797360490c7cd0ee0843a076ad8321e4995099891b4c6ed91"
     }
 }
